@@ -33,7 +33,7 @@ app.get("/hexes", async (req, res) => {
   }
 })
 
-app.get('/addhexes', async (req, res) => {
+app.post('/addhexes', async (req, res) => {
   try {
     const resp = await addHexes({ tableName })
     res.send(resp)
