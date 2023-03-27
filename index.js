@@ -1,18 +1,13 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const {
-  DynamoDBDocumentClient,
-  ScanCommand,
-} = require('@aws-sdk/lib-dynamodb')
-const express = require("express");
-const serverless = require("serverless-http");
+const express = require("express")
+const serverless = require("serverless-http")
+const { scanTable } = require('./src/repository/scanTable')
+const { addHexes } = require('./src/utils/addHexes')
 
-const app = express();
+const app = express()
 
-const COLOR_TABLE = process.env.COLOR_TABLE;
-const client = new DynamoDBClient();
-const dynamoDbClient = DynamoDBDocumentClient.from(client);
+const tableName = process.env.COLOR_TABLE
 
-app.use(express.json());
+app.use(express.json())
 
 app.get("/colors", async (req, res) => {
   
@@ -31,17 +26,17 @@ app.get("/colors", async (req, res) => {
 
 app.get("/hexes", async (req, res) => {
   try {
-    const params = {
-      TableName: COLOR_TABLE,
-      ProjectionExpression: 'hex'
-    }
-    const response = await dynamoDbClient.send(new ScanCommand(params))
+    const hexes = await scanTable({ tableName })
+    res.send(hexes)
+  } catch (error) {
+    console.log(error)
+  }
+})
 
-    if (response && response.$metadata.httpStatusCode == 200) {
-      const resp = response.Items.map(({hex}) => hex)
-      res.send(resp)
-    }
-
+app.get('/addhexes', async (req, res) => {
+  try {
+    const resp = await addHexes({ tableName })
+    res.send(resp)
   } catch (error) {
     console.log(error)
   }
@@ -50,8 +45,8 @@ app.get("/hexes", async (req, res) => {
 app.use((req, res, next) => {
   return res.status(404).json({
     error: "Not Found",
-  });
-});
+  })
+})
 
 
-module.exports.handler = serverless(app);
+module.exports.handler = serverless(app)
